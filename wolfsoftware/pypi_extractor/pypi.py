@@ -1,8 +1,8 @@
 """
-This module defines the PyPIPackageInfo class for fetching and processing package details from PyPI.
+This module defines the PyPiExtractor class for fetching and processing package details from PyPI.
 
 Classes:
-    - PyPIPackageInfo: A class to fetch and process package details for a given PyPI user.
+    - PyPiExtractor: A class to fetch and process package details for a given PyPI user.
 """
 from typing import Any, Dict, List, Optional
 
@@ -10,10 +10,10 @@ import json
 import requests
 from bs4 import BeautifulSoup
 
-from .exceptions import PyPIPackageInfoError
+from .exceptions import PyPiExtractorError
 
 
-class PyPIPackageInfo:
+class PyPiExtractor:
     """
     A class to fetch and process package details for a given PyPI user.
 
@@ -41,7 +41,7 @@ class PyPIPackageInfo:
             PyPIPackageInfoError: If the username is not provided.
         """
         if not username:
-            raise PyPIPackageInfoError("Username must be provided")
+            raise PyPiExtractorError("Username must be provided")
         self.username = username
 
     def get_user_packages(self) -> List[Dict[str, str]]:
@@ -55,14 +55,14 @@ class PyPIPackageInfo:
             PyPIPackageInfoError: If the username is not set or if there is an error fetching or parsing the user profile.
         """
         if not self.username:
-            raise PyPIPackageInfoError("Username must be set before fetching packages")
+            raise PyPiExtractorError("Username must be set before fetching packages")
 
         profile_url: str = "https://pypi.org/user/" + self.username + "/"
         try:
             response: requests.Response = requests.get(profile_url, timeout=10)
             response.raise_for_status()
         except requests.RequestException as e:
-            raise PyPIPackageInfoError(f"Error fetching user profile: {e}") from e
+            raise PyPiExtractorError(f"Error fetching user profile: {e}") from e
 
         soup = BeautifulSoup(response.text, 'html.parser')
         packages: List[Dict[str, str]] = []
@@ -72,7 +72,7 @@ class PyPIPackageInfo:
                 summary: str = project.find('p', class_='package-snippet__description').text.strip()
                 packages.append({'name': package_name, 'summary': summary})
             except AttributeError as e:
-                raise PyPIPackageInfoError(f"Error parsing package details: {e}") from e
+                raise PyPiExtractorError(f"Error parsing package details: {e}") from e
 
         return packages
 
@@ -94,12 +94,12 @@ class PyPIPackageInfo:
             response: requests.Response = requests.get(url, timeout=10)
             response.raise_for_status()
         except requests.RequestException as e:
-            raise PyPIPackageInfoError(f"Error fetching package details: {e}") from e
+            raise PyPiExtractorError(f"Error fetching package details: {e}") from e
 
         try:
             package_data: Any = response.json()
         except json.JSONDecodeError as e:
-            raise PyPIPackageInfoError(f"Error decoding JSON response: {e}") from e
+            raise PyPiExtractorError(f"Error decoding JSON response: {e}") from e
 
         info: Any = package_data.get('info', {})
         current_version: str = info.get('version')
@@ -149,21 +149,21 @@ class PyPIPackageInfo:
             PyPIPackageInfoError: If there is an error fetching or processing the package details.
         """
         if not self.username:
-            raise PyPIPackageInfoError("Username must be set before fetching package details")
+            raise PyPiExtractorError("Username must be set before fetching package details")
 
         try:
             packages: List[Dict[str, str]] = self.get_user_packages()
-        except PyPIPackageInfoError as e:
-            raise PyPIPackageInfoError(f"Failed to get user packages: {e}") from e
+        except PyPiExtractorError as e:
+            raise PyPiExtractorError(f"Failed to get user packages: {e}") from e
 
         if not packages:
-            raise PyPIPackageInfoError(f"No packages found for user/organization '{self.username}'")
+            raise PyPiExtractorError(f"No packages found for user/organization '{self.username}'")
 
         detailed_packages: List[Dict[str, Any]] = []
         for package in packages:
             try:
                 details: Dict[str, Any] = self.get_package_details(package['name'])
                 detailed_packages.append(details)
-            except PyPIPackageInfoError as e:
-                raise PyPIPackageInfoError(f"Failed to get details for package '{package['name']}': {e}") from e
+            except PyPiExtractorError as e:
+                raise PyPiExtractorError(f"Failed to get details for package '{package['name']}': {e}") from e
         return detailed_packages
