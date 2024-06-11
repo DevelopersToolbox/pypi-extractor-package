@@ -9,7 +9,7 @@ import importlib.metadata
 
 import pytest
 
-from wolfsoftware.pypi_extractor import PyPIPackageInfo, PyPIPackageInfoError  # pylint: disable=unused-import
+from wolfsoftware.pypi_extractor import PyPiExtractor, PyPiExtractorError  # pylint: disable=unused-import, no-name-in-module
 from .testconf import (  # noqa: F401  pylint: disable=unused-import
     mock_get_user_packages_success,
     mock_get_user_packages_error,
@@ -45,12 +45,12 @@ def test_init_with_empty_username() -> None:
     does not raise an error, and that attempting to fetch packages without setting a username
     raises a PyPIPackageInfoError.
     """
-    pypi_info = PyPIPackageInfo()
+    pypi_info = PyPiExtractor()
 
-    with pytest.raises(PyPIPackageInfoError, match="Username must be set before fetching packages"):
+    with pytest.raises(PyPiExtractorError, match="Username must be set before fetching packages"):
         pypi_info.get_user_packages()
 
-    with pytest.raises(PyPIPackageInfoError, match="Username must be set before fetching package details"):
+    with pytest.raises(PyPiExtractorError, match="Username must be set before fetching package details"):
         pypi_info.get_all_packages_details()
 
 
@@ -58,10 +58,10 @@ def test_set_username() -> None:
     """
     Test setting the username after initialization.
 
-    This test verifies that the username can be set after initializing the PyPIPackageInfo class,
+    This test verifies that the username can be set after initializing the PyPiExtractor class,
     and that it functions correctly with the set username.
     """
-    pypi_info = PyPIPackageInfo()
+    pypi_info = PyPiExtractor()
     pypi_info.set_username("testuser")
     assert pypi_info.username == "testuser"  # nosec: B101
 
@@ -70,11 +70,11 @@ def test_set_username_with_invalid_value() -> None:
     """
     Test setting the username with an invalid value.
 
-    This test verifies that setting the username to an empty string raises a PyPIPackageInfoError.
+    This test verifies that setting the username to an empty string raises a PyPiExtractorError.
     """
-    pypi_info = PyPIPackageInfo()
+    pypi_info = PyPiExtractor()
 
-    with pytest.raises(PyPIPackageInfoError, match="Username must be provided"):
+    with pytest.raises(PyPiExtractorError, match="Username must be provided"):
         pypi_info.set_username("")
 
 
@@ -86,7 +86,7 @@ def test_get_user_packages_success(mock_get_user_packages_success) -> None:  # n
     to return a successful response and verifies that the get_user_packages method returns
     the expected list of packages.
     """
-    pypi_info = PyPIPackageInfo("testuser")
+    pypi_info = PyPiExtractor("testuser")
     packages: List = pypi_info.get_user_packages()
 
     assert len(packages) == 2  # nosec: B101
@@ -101,11 +101,11 @@ def test_get_user_packages_error(mock_get_user_packages_error) -> None:  # noqa:
     Test get_user_packages method when there is an error.
 
     This test uses the mock_get_user_packages_error fixture to mock requests.get method
-    to raise an exception and verifies that the get_user_packages method raises a PyPIPackageInfoError.
+    to raise an exception and verifies that the get_user_packages method raises a PyPiExtractorError.
     """
-    pypi_info = PyPIPackageInfo("testuser")
+    pypi_info = PyPiExtractor("testuser")
 
-    with pytest.raises(PyPIPackageInfoError, match="Error fetching user profile: Request error"):
+    with pytest.raises(PyPiExtractorError, match="Error fetching user profile: Request error"):
         pypi_info.get_user_packages()
 
 
@@ -117,7 +117,7 @@ def test_get_package_details_success(mock_get_package_details_success) -> None: 
     to return a successful response and verifies that the get_package_details method returns
     the expected package details.
     """
-    pypi_info = PyPIPackageInfo("testuser")
+    pypi_info = PyPiExtractor("testuser")
     details: Dict[str, Any] = pypi_info.get_package_details("Package1")
 
     assert details['name'] == "Package1"  # nosec: B101
@@ -141,11 +141,11 @@ def test_get_package_details_error(mock_get_package_details_error) -> None:  # n
     Test get_package_details method when there is an error.
 
     This test uses the mock_get_package_details_error fixture to mock requests.get method
-    to raise an exception and verifies that the get_package_details method raises a PyPIPackageInfoError.
+    to raise an exception and verifies that the get_package_details method raises a PyPiExtractorError.
     """
-    pypi_info = PyPIPackageInfo("testuser")
+    pypi_info = PyPiExtractor("testuser")
 
-    with pytest.raises(PyPIPackageInfoError, match="Error fetching package details: Request error"):
+    with pytest.raises(PyPiExtractorError, match="Error fetching package details: Request error"):
         pypi_info.get_package_details("Package1")
 
 
@@ -157,7 +157,7 @@ def test_get_all_packages_details_success(mock_get_all_packages_details_success)
     to return a successful response for both user packages and package details, and verifies that
     the get_all_packages_details method returns the expected list of detailed package information.
     """
-    pypi_info = PyPIPackageInfo("testuser")
+    pypi_info = PyPiExtractor("testuser")
     details: List = pypi_info.get_all_packages_details()
 
     assert len(details) == 2  # nosec: B101

@@ -1,12 +1,12 @@
 """
-This module defines custom exceptions for the PyPI package info retriever.
+This module defines custom exceptions for the PyPI Extractor package.
 
 Classes:
-    - PyPIPackageInfoError: A custom exception class for errors in the PyPIPackageInfo class.
+    - PyPiExtractorError: A custom exception class for errors in the PyPiExtractor class.
 """
 
 
-class PyPIPackageInfoError(Exception):
+class PyPiExtractorError(Exception):
     """
     Custom exception class for PyPIPackageInfo errors.
 

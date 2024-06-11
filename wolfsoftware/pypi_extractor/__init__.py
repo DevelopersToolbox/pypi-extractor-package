@@ -8,8 +8,8 @@ Attributes:
 
 import importlib.metadata
 
-from .exceptions import PyPIPackageInfoError
-from .pypi import PyPIPackageInfo
+from .exceptions import PyPiExtractorError
+from .pypi import PyPiExtractor
 
 try:
     __version__: str = importlib.metadata.version('pypi_extractor')
@@ -17,6 +17,6 @@ except importlib.metadata.PackageNotFoundError:
     __version__ = 'unknown'
 
 __all__: list[str] = [
-    'PyPIPackageInfoError',
-    'PyPIPackageInfo'
+    'PyPiExtractorError',
+    'PyPiExtractor'
 ]
