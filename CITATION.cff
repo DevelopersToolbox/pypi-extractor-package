@@ -3,8 +3,8 @@ message: If you use this software, please cite it using these metadata.
 title: PyPi Extractor
 abstract: Extract package information for a given user in PyPi.
 type: software
-version: 0.1.1
-date-released: 2024-06-11
+version: 0.1.2
+date-released: 2024-06-26
 repository-code: https://github.com/DevelopersToolbox/pypi-extractor-package
 keywords:
   - "Wolf Software"
