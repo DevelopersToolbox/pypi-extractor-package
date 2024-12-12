@@ -7,8 +7,11 @@ Classes:
 from typing import Any, Dict, List, Optional
 
 import json
+import subprocess  # nosec: B404
+
 import requests
-from bs4 import BeautifulSoup
+
+from playwright.sync_api import sync_playwright
 
 from .exceptions import PyPiExtractorError
 
@@ -21,7 +24,7 @@ class PyPiExtractor:
         username (Optional[str]): The PyPI username whose packages are to be fetched.
     """
 
-    def __init__(self, username: Optional[str] = None) -> None:
+    def __init__(self, username: Optional[str] = None, verbose: Optional[bool] = False, auto_install: Optional[bool] = False) -> None:
         """
         Initialize the PyPIPackageInfo. The username can be set during initialization or later using the set_username method.
 
@@ -29,6 +32,8 @@ class PyPiExtractor:
             username (Optional[str]): The PyPI username. Default is None.
         """
         self.username: Optional[str] = username
+        self.verbose: Optional[bool] = verbose
+        self.auto_install: Optional[bool] = auto_install
 
     def set_username(self, username: str) -> None:
         """
@@ -44,6 +49,31 @@ class PyPiExtractor:
             raise PyPiExtractorError("Username must be provided")
         self.username = username
 
+    def enable_verbose(self) -> None:
+        """Enable verbose output."""
+        self.verbose = True
+
+    def enable_auto_install(self) -> None:
+        """Enable auto_install."""
+        self.auto_install = True
+
+    def ensure_playwright_browsers_and_deps(self) -> None:
+        """Ensure Playwright browsers and system dependencies are installed silently."""
+        if self.auto_install:
+            try:
+                # Install Playwright browsers silently
+                subprocess.run(["playwright", "install"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # nosec: B603 B607
+                if self.verbose:
+                    print("Playwright browsers installed successfully.")
+
+                # Install system-level dependencies silently (Linux only)
+                subprocess.run(["playwright", "install-deps"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # nosec: B603 B607
+                if self.verbose:
+                    print("System dependencies installed successfully.")
+            except subprocess.CalledProcessError as e:
+                print(f"Error during Playwright setup: {e}")
+                raise
+
     def get_user_packages(self) -> List[Dict[str, str]]:
         """
         Fetch the list of packages for the given PyPI user.
@@ -52,27 +82,34 @@ class PyPiExtractor:
             list: A list of dictionaries containing package names and summaries.
 
         Raises:
-            PyPIPackageInfoError: If the username is not set or if there is an error fetching or parsing the user profile.
+            PyPiExtractorError: If the username is not set or if there is an error fetching or parsing the user profile.
         """
         if not self.username:
             raise PyPiExtractorError("Username must be set before fetching packages")
 
         profile_url: str = "https://pypi.org/user/" + self.username + "/"
-        try:
-            response: requests.Response = requests.get(profile_url, timeout=10)
-            response.raise_for_status()
-        except requests.RequestException as e:
-            raise PyPiExtractorError(f"Error fetching user profile: {e}") from e
-
-        soup = BeautifulSoup(response.text, 'html.parser')
         packages: List[Dict[str, str]] = []
-        for project in soup.find_all('a', class_='package-snippet'):
-            try:
-                package_name: str = project.find('h3', class_='package-snippet__title').text.strip()
-                summary: str = project.find('p', class_='package-snippet__description').text.strip()
-                packages.append({'name': package_name, 'summary': summary})
-            except AttributeError as e:
-                raise PyPiExtractorError(f"Error parsing package details: {e}") from e
+
+        try:
+            self.ensure_playwright_browsers_and_deps()
+
+            with sync_playwright() as p:
+                browser: Any = p.chromium.launch(headless=True)
+                context: Any = browser.new_context()
+                page: Any = context.new_page()
+
+                page.goto(profile_url)
+                page.wait_for_selector('.package-snippet')
+
+                elements: Any = page.query_selector_all('a.package-snippet')
+                for element in elements:
+                    package_name: Any = element.query_selector('h3.package-snippet__title').inner_text().strip()
+                    summary: Any = element.query_selector('p.package-snippet__description').inner_text().strip()
+                    packages.append({'name': package_name, 'summary': summary})
+
+                browser.close()
+        except Exception as e:
+            raise PyPiExtractorError(f"Error fetching user profile with Playwright: {e}") from e
 
         return packages
 

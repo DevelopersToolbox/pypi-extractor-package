@@ -44,6 +44,22 @@ PyPI Extractor is a Python package designed to fetch and process detailed inform
 Python Package Index (PyPI). This package is particularly useful for users who want to retrieve and analyze metadata for packages
 maintained by a specific PyPI user.
 
+## Significant Update From 0.1.3
+
+pypi.org no longer allow you to scrap details using the requests package, or any package that does not support JavaScript. To resolve this we have
+updated this package to utilise [PlayWright](https://pypi.org/project/playwright/) when retrieving a list of packages for a given user. While we have 
+attempted to automate as much as possible you might want to do some of the work manually.
+
+Playwright needs two commands to be run in order for it to function correctly:
+
+```
+playwright install
+playwright install-deps
+```
+
+We have added an `auto_install` option to the main class so that you can instruct the package to do the install for you, this helps when installing the
+package in a fully automated way, e.g. Puppet or similar.
+
 ## Features
 
 - Retrieve a list of packages maintained by a specific PyPI user.
@@ -116,11 +132,13 @@ print(package_details)
 
 A class to fetch and process package details for a given PyPI user.
 
-##### `__init__(self, username: str)`
+##### `__init__(self, username: str, verbose: bool, auto_install: bool)`
 
 - Initializes the `PyPiExtractor` with a username.
 - Parameters:
   - `username` (str): The PyPI username.
+  - `verbose` (bool): Verbose output (Default: False)
+  - `auto_install` (bool): Auto install PlayWright dependencies (Default: False)
 - Raises:
   - `PyPiExtractorError`: If the username is not provided.
 
@@ -131,6 +149,14 @@ A class to fetch and process package details for a given PyPI user.
   - `username` (str): The PyPI username.
 - Raises:
   - `PyPiExtractorError`: If the username is not provided.
+
+##### `enable_verbose(self)`
+
+- Enable verbose mode.
+
+##### `enable_auto_install(self)`
+
+- Enable auto install.
 
 ##### `get_user_packages(self) -> list`
 
