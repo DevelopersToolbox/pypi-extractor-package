@@ -75,6 +75,9 @@ jobs:
       - name: Install Pytest
         run: pip install pytest pytest-mock
 
+      - name: Setup PlayWright
+        run: playwright install && playwright install-deps
+
       - name: Run Pytest
         run: pytest --no-header -vv
 

@@ -10,13 +10,6 @@ import importlib.metadata
 import pytest
 
 from wolfsoftware.pypi_extractor import PyPiExtractor, PyPiExtractorError  # pylint: disable=unused-import, no-name-in-module
-from .testconf import (  # noqa: F401  pylint: disable=unused-import
-    mock_get_user_packages_success,
-    mock_get_user_packages_error,
-    mock_get_package_details_success,
-    mock_get_package_details_error,
-    mock_get_all_packages_details_success
-)
 
 
 def test_version() -> None:
@@ -78,16 +71,11 @@ def test_set_username_with_invalid_value() -> None:
         pypi_info.set_username("")
 
 
-def test_get_user_packages_success(mock_get_user_packages_success) -> None:  # noqa: F811  pylint: disable=redefined-outer-name, unused-argument
-    """
-    Test get_user_packages method for a successful case.
-
-    This test uses the mock_get_user_packages_success fixture to mock requests.get method
-    to return a successful response and verifies that the get_user_packages method returns
-    the expected list of packages.
-    """
-    pypi_info = PyPiExtractor("testuser")
-    packages: List = pypi_info.get_user_packages()
+@pytest.mark.usefixtures("mock_playwright")
+def test_get_user_packages_success() -> None:
+    """Test the get_user_packages method for a successful case."""
+    pypi_extractor = PyPiExtractor("testuser")
+    packages: List[Dict[str, str]] = pypi_extractor.get_user_packages()
 
     assert len(packages) == 2  # nosec: B101
     assert packages[0]['name'] == "Package1"  # nosec: B101
@@ -96,20 +84,16 @@ def test_get_user_packages_success(mock_get_user_packages_success) -> None:  # n
     assert packages[1]['summary'] == "Description2"  # nosec: B101
 
 
-def test_get_user_packages_error(mock_get_user_packages_error) -> None:  # noqa: F811  pylint: disable=redefined-outer-name, unused-argument
-    """
-    Test get_user_packages method when there is an error.
-
-    This test uses the mock_get_user_packages_error fixture to mock requests.get method
-    to raise an exception and verifies that the get_user_packages method raises a PyPiExtractorError.
-    """
-    pypi_info = PyPiExtractor("testuser")
-
-    with pytest.raises(PyPiExtractorError, match="Error fetching user profile: Request error"):
-        pypi_info.get_user_packages()
+@pytest.mark.usefixtures("mock_playwright_error")
+def test_get_user_packages_error() -> None:
+    """Test the get_user_packages method when Playwright fails."""
+    pypi_extractor = PyPiExtractor("testuser")
+    with pytest.raises(PyPiExtractorError, match="Error fetching user profile with Playwright"):
+        pypi_extractor.get_user_packages()
 
 
-def test_get_package_details_success(mock_get_package_details_success) -> None:  # noqa: F811  pylint: disable=redefined-outer-name, unused-argument
+@pytest.mark.usefixtures("mock_get_package_details_success")
+def test_get_package_details_success() -> None:
     """
     Test get_package_details method for a successful case.
 
@@ -136,7 +120,8 @@ def test_get_package_details_success(mock_get_package_details_success) -> None: 
     assert details['older_versions'][0]['version'] == "0.9.0"  # nosec: B101
 
 
-def test_get_package_details_error(mock_get_package_details_error) -> None:  # noqa: F811  pylint: disable=redefined-outer-name, unused-argument
+@pytest.mark.usefixtures("mock_get_package_details_error")
+def test_get_package_details_error() -> None:
     """
     Test get_package_details method when there is an error.
 
@@ -149,7 +134,8 @@ def test_get_package_details_error(mock_get_package_details_error) -> None:  # n
         pypi_info.get_package_details("Package1")
 
 
-def test_get_all_packages_details_success(mock_get_all_packages_details_success) -> None:  # noqa: F811  pylint: disable=redefined-outer-name, unused-argument
+@pytest.mark.usefixtures("mock_playwright", "mock_get_all_packages_details_success")
+def test_get_all_packages_details_success() -> None:
     """
     Test get_all_packages_details method for a successful case.
 
