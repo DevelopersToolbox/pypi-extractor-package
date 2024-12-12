@@ -75,13 +75,13 @@ def test_set_username_with_invalid_value() -> None:
 def test_get_user_packages_success() -> None:
     """Test the get_user_packages method for a successful case."""
     pypi_extractor = PyPiExtractor("testuser")
-    packages = pypi_extractor.get_user_packages()
+    packages: List[Dict[str, str]] = pypi_extractor.get_user_packages()
 
-    assert len(packages) == 2
-    assert packages[0]['name'] == "Package1"
-    assert packages[0]['summary'] == "Description1"
-    assert packages[1]['name'] == "Package2"
-    assert packages[1]['summary'] == "Description2"
+    assert len(packages) == 2  # nosec: B101
+    assert packages[0]['name'] == "Package1"  # nosec: B101
+    assert packages[0]['summary'] == "Description1"  # nosec: B101
+    assert packages[1]['name'] == "Package2"  # nosec: B101
+    assert packages[1]['summary'] == "Description2"  # nosec: B101
 
 
 @pytest.mark.usefixtures("mock_playwright_error")
